@@ -1,20 +1,19 @@
-[tool.poetry]
+[project]
 name = "autoignition"
 version = "0.1.0"
 description = "A tool for running, analyzing, and plotting autoignition simulations with Cantera."
-authors = ["Cory Kinney <cory.kinney@ucf.edu>"]
+authors = [
+    {name = "Cory Kinney", email = "cory.kinney@ucf.edu"}
+]
 license = "MIT"
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.10"
-Cantera = "^3.0.1"
-numpy = "^2.0.0"
-matplotlib = "^3.9.0"
-
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.5.0"
+requires-python = ">=3.10"
+dependencies = [
+    "cantera>=3.0.1",
+    "matplotlib>=3.9.2",
+    "numpy>=2.1.0",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
