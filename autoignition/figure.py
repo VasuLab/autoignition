@@ -13,6 +13,7 @@ class Figure:
     Attributes:
         ax_temp: Temperature axis.
         ax_inv: Inverse temperature axis.
+        prop_groups: Property groups.
     """
 
     def __init__(self):
