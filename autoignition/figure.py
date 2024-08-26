@@ -1,5 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import uncertainties
+from uncertainties import unumpy
 
 
 class Figure:
@@ -15,6 +17,9 @@ class Figure:
         ax_inv: Inverse temperature axis.
         prop_groups: Property groups.
     """
+
+    exp_props = {"linestyle": "None", "marker": "o", "capsize": 5}
+    """Default properties for errorbar plots."""
 
     def __init__(self):
         # Create inverse temperature axis
@@ -42,18 +47,23 @@ class Figure:
     # Note: Merging dictionaries with `a | b` replaces values from `a` with `b` in the case of duplicate keys.
     # This behavior is utilized in the plotting functions to override properties on a priority basis.
 
-    def plot_exp(self, T: list[float] | np.ndarray, IDT: list[float] | np.ndarray, *groups, **kwargs):
+    def plot_exp(
+        self,
+        T: list[float] | np.ndarray,
+        IDT: list[float] | np.ndarray,
+        *groups,
+        **kwargs,
+    ):
         """
         Args:
             T: Temperatures [K].
             IDT: Ignition delay times [s].
             *groups: Group names.
         """
-        props = {}
+        props = self.exp_props
 
         # Apply relevant property groups
         if groups is not None:
-            print("Hello")
             for g in groups:
                 try:
                     props = props | self.prop_groups[g]
@@ -62,8 +72,19 @@ class Figure:
 
         props = props | kwargs  # Override properties with keyword arguments
 
-        T = np.asarray(T)  # Convert to array for division
-        return self.ax_inv.scatter(1000.0 / T, IDT, **props)
+        T_inv = 1000.0 / np.asarray(T)  # Invert temperature
+        IDT = np.asarray(IDT)
+
+        T_uncertainty = T_inv.dtype == np.dtype(uncertainties.core.Variable)
+        IDT_uncertainty = IDT.dtype == np.dtype(uncertainties.core.Variable)
+
+        return self.ax_inv.errorbar(
+            unumpy.nominal_values(T_inv) if T_uncertainty else T_inv, 
+            unumpy.nominal_values(IDT) if IDT_uncertainty else IDT, 
+            unumpy.std_devs(IDT) if IDT_uncertainty else None,
+            unumpy.std_devs(T_inv) if T_uncertainty else None,
+            **props
+        )
 
     def show(self):
         plt.show()
