@@ -44,8 +44,14 @@ class Figure:
         # Property groups
         self.prop_groups: dict[str, dict] = {}
 
-    # Note: Merging dictionaries with `a | b` replaces values from `a` with `b` in the case of duplicate keys.
-    # This behavior is utilized in the plotting functions to override properties on a priority basis.
+    def _get_group_props(self, groups: list[str]) -> dict:
+        props = {}
+        for g in groups:
+            try:
+                props = props | self.prop_groups[g]
+            except KeyError:
+                raise ValueError(f"Invalid property group name: '{g}'")
+        return props
 
     def plot_exp(
         self,
@@ -58,25 +64,17 @@ class Figure:
         Args:
             T: Temperatures [K].
             IDT: Ignition delay times [s].
-            *groups: Group names.
+            *groups: Property group names.
         """
         props = self.exp_props
-
-        # Apply relevant property groups
-        if groups is not None:
-            for g in groups:
-                try:
-                    props = props | self.prop_groups[g]
-                except KeyError:
-                    raise ValueError(f"Invalid property group name: '{g}'")
-
+        props = props | self._get_group_props(groups)  # Override properties with group properties
         props = props | kwargs  # Override properties with keyword arguments
 
         T_inv = 1000.0 / np.asarray(T)  # Invert temperature
         IDT = np.asarray(IDT)
 
-        T_uncertainty = T_inv.dtype == np.dtype(uncertainties.core.Variable)
-        IDT_uncertainty = IDT.dtype == np.dtype(uncertainties.core.Variable)
+        T_uncertainty = T_inv.dtype == uncertainties.core.Variable
+        IDT_uncertainty = IDT.dtype == uncertainties.core.Variable
 
         return self.ax_inv.errorbar(
             unumpy.nominal_values(T_inv) if T_uncertainty else T_inv, 
