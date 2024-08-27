@@ -21,6 +21,9 @@ class Figure:
     exp_props = {"linestyle": "None", "marker": "o", "capsize": 5}
     """Default properties for errorbar plots."""
 
+    sim_props = {}
+    """Default properties for all simulation line plots."""
+
     def __init__(self):
         # Create inverse temperature axis
         _, self.ax_inv = plt.subplots()
@@ -83,6 +86,27 @@ class Figure:
             unumpy.std_devs(T_inv) if T_uncertainty else None,
             **props
         )
+    
+    def plot_sim(
+        self, 
+        T: list[float] | np.ndarray, 
+        IDT: list[float] | np.ndarray, 
+        *groups,
+        **kwargs
+    ):
+        """
+        Args:
+            T: Temperatures [K].
+            IDT: Ignition delay times [s].
+            *groups: Property group names.
+        """
+
+        props = self.sim_props
+        props = props | self._get_group_props(groups)  # Override properties with group properties
+        props = props | kwargs  # Override properties with keyword arguments
+
+        T_inv = 1000.0 / np.asarray(T)
+        return self.ax_inv.plot(T_inv, IDT, **props)
 
     def show(self):
         plt.show()
