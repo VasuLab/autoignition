@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import numpy as np
 from matplotlib import pyplot as plt
 import uncertainties
@@ -47,7 +49,7 @@ class Figure:
         # Property groups
         self.prop_groups: dict[str, dict] = {}
 
-    def _get_group_props(self, groups: list[str]) -> dict:
+    def _get_group_props(self, groups: Iterable[str]) -> dict:
         props = {}
         for g in groups:
             try:
