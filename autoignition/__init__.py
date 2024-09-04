@@ -1,4 +1,4 @@
 from .figure import Figure
-from .simulation import Simulation
+from .simulation import Simulation, Executor
 
-__all__ = ["Figure", "Simulation"]
+__all__ = ["Figure", "Simulation", "Executor"]

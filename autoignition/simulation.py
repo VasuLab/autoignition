@@ -1,6 +1,10 @@
+from concurrent.futures import ProcessPoolExecutor, Future
+
 import cantera as ct
 import numpy as np
 import numpy.typing as npt
+import os
+
 
 
 class Simulation:
@@ -162,3 +166,88 @@ class Simulation:
 
         return species[:n]
 
+
+class Executor:
+    def __init__(self, max_workers: int | None = None, output_dir: str | None = None):
+        """
+        Args:
+            max_workers: Maximum number of worker processes.
+            output_dir: Directory to output simulation files.
+        """
+        self._max_workers = max_workers
+        self.executor: ProcessPoolExecutor | None = None
+        self.futures: dict[int, Future] = {}
+        self.parameters: dict[int, dict] = {}
+        self._simulation_count: int = 0
+
+        self._output_dir = None
+        self.output_dir = output_dir if output_dir is not None else "output"
+
+
+    def __enter__(self):
+        # Create the ProcessPoolExecutor when entering the context
+        self.executor = ProcessPoolExecutor(max_workers=self._max_workers)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Ensure that the executor is properly shut down when exiting
+        if self.executor:
+            self.executor.shutdown(wait=True)
+        self.executor = None
+
+    def __getitem__(self, id: int) -> Simulation:
+        try:
+            filepath = self.futures[id].result()
+        except KeyError:
+            raise ValueError("Invalid simulation ID.")
+
+        mech = self.parameters[id]["mech"]
+        return Simulation.restore(filepath, mech)
+
+    @property
+    def output_dir(self) -> str | None:
+        return self._output_dir
+    
+    @output_dir.setter
+    def output_dir(self, output_dir: str):
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
+        self._output_dir = output_dir
+
+    @staticmethod
+    def _run_simulation(mech: str, T: float, P: float, X, output_filepath: str) -> str:
+        sim = Simulation(mech, T, P, X)
+        sim.run()
+        filepath = sim.save(output_filepath)
+        return filepath
+
+    def submit_simulation(self, mech: str, T: float, P: float, X, *, filename: str | None = None) -> int:
+        """
+        Args:
+            mech: Filepath to Cantera mechanism.
+            T: Temperature [K].
+            P: Pressure [Pa].
+            X: Species mole fractions.
+            filename: Name of the output simulation file (default: `sim[id].yaml`).
+
+        Returns:
+            id: Simulation ID number.
+        """
+
+        if self.executor:
+            id = self._simulation_count
+            self._simulation_count += 1
+                
+            self.parameters[id] = {"mech": mech, "T": T, "P": P, "X": X}
+            self.futures[id] = self.executor.submit(
+                self._run_simulation, 
+                mech, T, P, X,
+                os.path.join(
+                    self.output_dir, 
+                    filename if filename is not None else f"sim{id}.yaml"
+                ),
+            )
+
+            return id
+
+        raise RuntimeError("Executor not initialized")
