@@ -58,6 +58,25 @@ class Figure:
                 raise ValueError(f"Invalid property group name: '{g}'")
         return props
 
+    @property
+    def T_lim(self) -> tuple[float, float]:
+        """Get/set the temperature [K] limits of the figure."""
+        value = self.ax_inv.get_xlim()
+        return 1000 / value[1], 1000 / value[0]
+
+    @T_lim.setter
+    def T_lim(self, value: tuple[float, float]):
+        self.ax_inv.set_xlim(1000 / value[1], 1000 / value[0])
+
+    @property
+    def IDT_lim(self) -> tuple[float, float]:
+        """Get/set the ignition delay time [s] limits of the figure."""
+        return self.ax_inv.get_ylim()
+
+    @IDT_lim.setter
+    def IDT_lim(self, value: tuple[float, float]):
+        self.ax_inv.set_ylim(value)
+
     def plot_exp(
         self,
         T: list[float] | np.ndarray,
