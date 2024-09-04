@@ -30,13 +30,54 @@ class Simulation:
         Args:
             t: Simulation end time [s].
         """
-        i = 0
         while self.reactor_net.time < t:
             self.reactor_net.step()
             self.states.append(self.reactor.thermo.state, t=self.reactor_net.time)
-            i += 1
 
         return self
+
+    def save(self, filepath: str) -> str:
+        """
+        !!! Note
+            If `filepath` doesn't end with ".yaml", it will be appended automatically.
+
+        !!! Warning
+            `save` will overwrite an existing file with the same filepath.
+
+        Args:
+            filepath: Filepath to save the state data.
+
+        Returns:
+            Filepath of saved state.
+        """
+        if not filepath.endswith(".yaml"):
+            filepath += ".yaml"
+        self.states.save(filepath, name="simulation", overwrite=True)
+        return filepath
+
+    @classmethod
+    def restore(cls, filepath: str, mech: str):
+        """
+        !!! Warning
+            Integrator state is not preserved; therefore, continuing a simulation from saved
+            state data, although it will yield essentially the same results, will not *exactly* match a 
+            simulation ran without saving and reloading, as the integrator must take smaller steps initally. 
+
+        Args:
+            filepath: Filepath to the saved state data in YAML format.
+            mech: Mechanism file to reinitialize the simulation and state.
+        """
+        gas = ct.Solution(mech)
+        states = ct.SolutionArray(gas)
+        states.restore(filepath, name="simulation")
+
+        T, P, X = states[-1].TPX
+        sim = cls(gas, T, P, X)
+        sim.states = states
+        sim.reactor_net.initial_time = states.t[-1]
+        sim.reactor_net.reinitialize()
+
+        return sim
 
     @property
     def t(self) -> npt.NDArray[np.float64]:
