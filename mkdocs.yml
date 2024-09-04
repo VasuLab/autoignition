@@ -1,0 +1,50 @@
+site_name: autoignition
+repo_name: corykinney/autoignition
+repo_url: https://github.com/corykinney/autoignition
+
+nav:
+  - index.md
+
+theme:
+  name: material
+  font:
+    code: Consolas
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: orange
+      accent: amber
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: orange
+      accent: amber
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            members_order: source
+            merge_init_into_class: true
+            heading_level: 1
+            show_signature_annotations: true
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: false
+
+markdown_extensions:
+  - admonition
+
+watch:
+  - autoignition
+
+extra_css:
+- css/mkdocstrings.css
