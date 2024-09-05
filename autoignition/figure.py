@@ -101,19 +101,19 @@ class Figure:
         IDT_uncertainty = IDT.dtype == uncertainties.core.Variable
 
         return self.ax_inv.errorbar(
-            unumpy.nominal_values(T_inv) if T_uncertainty else T_inv, 
-            unumpy.nominal_values(IDT) if IDT_uncertainty else IDT, 
+            unumpy.nominal_values(T_inv) if T_uncertainty else T_inv,
+            unumpy.nominal_values(IDT) if IDT_uncertainty else IDT,
             unumpy.std_devs(IDT) if IDT_uncertainty else None,
             unumpy.std_devs(T_inv) if T_uncertainty else None,
-            **props
+            **props,
         )
-    
+
     def plot_sim(
-        self, 
-        T: list[float] | np.ndarray, 
-        IDT: list[float] | np.ndarray, 
+        self,
+        T: list[float] | np.ndarray,
+        IDT: list[float] | np.ndarray,
         *groups,
-        **kwargs
+        **kwargs,
     ):
         """
         Args:

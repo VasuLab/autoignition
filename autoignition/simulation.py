@@ -6,9 +6,10 @@ import numpy.typing as npt
 import os
 
 
-
 class Simulation:
-    def __init__(self, gas: ct.Solution | str, T: float, P: float, X: str | dict[str, float]):
+    def __init__(
+        self, gas: ct.Solution | str, T: float, P: float, X: str | dict[str, float]
+    ):
         """
         Args:
             gas: Cantera gas phase object or filepath to mechanism.
@@ -64,8 +65,8 @@ class Simulation:
         """
         !!! Warning
             Integrator state is not preserved; therefore, continuing a simulation from saved
-            state data, although it will yield essentially the same results, will not *exactly* match a 
-            simulation ran without saving and reloading, as the integrator must take smaller steps initally. 
+            state data, although it will yield essentially the same results, will not *exactly* match a
+            simulation ran without saving and reloading, as the integrator must take smaller steps initally.
 
         Args:
             filepath: Filepath to the saved state data in YAML format.
@@ -99,7 +100,7 @@ class Simulation:
         return self.states.P
 
     def X(self, species: str) -> npt.NDArray[np.float64]:
-        """        
+        """
         Args:
             species: Name of species.
 
@@ -108,7 +109,9 @@ class Simulation:
         """
         return self.states(species).X.flatten()
 
-    def ignition_delay_time(self, species: str | None = None, *, method: str = "inflection") -> float | None:
+    def ignition_delay_time(
+        self, species: str | None = None, *, method: str = "inflection"
+    ) -> float | None:
         """
         Calculates the ignition delay time from the reactor temperature history, or `species` mole fraction if given,
         using the specified `method`.
@@ -140,7 +143,9 @@ class Simulation:
                 f"Invalid method '{method}'; valid methods are 'inflection' and 'peak'."
             )
 
-    def get_top_species(self, n: int | None = None, *, exclude: str | list[str] | None = None) -> list[str]:
+    def get_top_species(
+        self, n: int | None = None, *, exclude: str | list[str] | None = None
+    ) -> list[str]:
         """
         Args:
             n: Number of species to include - all species are included by default.
@@ -183,7 +188,6 @@ class Executor:
         self._output_dir = None
         self.output_dir = output_dir if output_dir is not None else "output"
 
-
     def __enter__(self):
         # Create the ProcessPoolExecutor when entering the context
         self.executor = ProcessPoolExecutor(max_workers=self._max_workers)
@@ -207,7 +211,7 @@ class Executor:
     @property
     def output_dir(self) -> str | None:
         return self._output_dir
-    
+
     @output_dir.setter
     def output_dir(self, output_dir: str):
         if not os.path.isdir(output_dir):
@@ -221,7 +225,9 @@ class Executor:
         filepath = sim.save(output_filepath)
         return filepath
 
-    def submit_simulation(self, mech: str, T: float, P: float, X, *, filename: str | None = None) -> int:
+    def submit_simulation(
+        self, mech: str, T: float, P: float, X, *, filename: str | None = None
+    ) -> int:
         """
         Args:
             mech: Filepath to Cantera mechanism.
@@ -237,14 +243,17 @@ class Executor:
         if self.executor:
             id = self._simulation_count
             self._simulation_count += 1
-                
+
             self.parameters[id] = {"mech": mech, "T": T, "P": P, "X": X}
             self.futures[id] = self.executor.submit(
-                self._run_simulation, 
-                mech, T, P, X,
+                self._run_simulation,
+                mech,
+                T,
+                P,
+                X,
                 os.path.join(
-                    self.output_dir, 
-                    filename if filename is not None else f"sim{id}.yaml"
+                    self.output_dir,
+                    filename if filename is not None else f"sim{id}.yaml",
                 ),
             )
 
