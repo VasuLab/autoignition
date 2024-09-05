@@ -172,7 +172,7 @@ class Simulation:
         return species[:n]
 
 
-class Executor:
+class SimulationPool:
     def __init__(self, max_workers: int | None = None, output_dir: str | None = None):
         """
         Args:
@@ -259,4 +259,4 @@ class Executor:
 
             return id
 
-        raise RuntimeError("Executor not initialized")
+        raise RuntimeError("ProcessPoolExecutor not initialized")
