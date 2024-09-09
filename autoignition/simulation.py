@@ -1,4 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor, Future
+from typing import Any, Callable
 
 import cantera as ct
 import numpy as np
@@ -173,17 +174,24 @@ class Simulation:
 
 
 class SimulationPool:
-    def __init__(self, max_workers: int | None = None, output_dir: str | None = None):
+    def __init__(
+        self,
+        max_workers: int | None = None,
+        output_dir: str | None = None,
+        process_func: Callable[[Simulation], Any] | None = None,
+    ):
         """
         Args:
             max_workers: Maximum number of worker processes.
             output_dir: Directory to output simulation files.
+            process_func: Optional function to process simulation results.
         """
         self._max_workers = max_workers
         self.executor: ProcessPoolExecutor | None = None
         self.futures: dict[int, Future] = {}
         self.parameters: dict[int, dict] = {}
         self._simulation_count: int = 0
+        self.process_func = process_func
 
         self._output_dir = None
         self.output_dir = output_dir if output_dir is not None else "output"
@@ -199,14 +207,14 @@ class SimulationPool:
             self.executor.shutdown(wait=True)
         self.executor = None
 
-    def __getitem__(self, id: int) -> Simulation:
+    def __getitem__(self, id: int) -> tuple[Simulation, Any]:
         try:
-            filepath = self.futures[id].result()
+            filepath, result = self.futures[id].result()
         except KeyError:
             raise ValueError("Invalid simulation ID.")
 
         mech = self.parameters[id]["mech"]
-        return Simulation.restore(filepath, mech)
+        return Simulation.restore(filepath, mech), result
 
     @property
     def output_dir(self) -> str | None:
@@ -219,11 +227,23 @@ class SimulationPool:
         self._output_dir = output_dir
 
     @staticmethod
-    def _run_simulation(mech: str, T: float, P: float, X, output_filepath: str) -> str:
+    def _run_simulation(
+        mech: str,
+        T: float,
+        P: float,
+        X,
+        output_filepath: str,
+        process_func: Callable[[Simulation], Any] | None = None,
+    ) -> tuple[str, Any]:
         sim = Simulation(mech, T, P, X)
         sim.run()
         filepath = sim.save(output_filepath)
-        return filepath
+
+        result = None
+        if process_func:
+            result = process_func(sim)
+
+        return filepath, result
 
     def submit_simulation(
         self, mech: str, T: float, P: float, X, *, filename: str | None = None
@@ -255,6 +275,7 @@ class SimulationPool:
                     self.output_dir,
                     filename if filename is not None else f"sim{id}.yaml",
                 ),
+                self.process_func,
             )
 
             return id
