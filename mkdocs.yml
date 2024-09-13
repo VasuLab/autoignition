@@ -1,6 +1,6 @@
 site_name: autoignition
-repo_name: corykinney/autoignition
-repo_url: https://github.com/corykinney/autoignition
+repo_name: VasuLab/autoignition
+repo_url: https://github.com/VasuLab/autoignition
 
 nav:
   - index.md
